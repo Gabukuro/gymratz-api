@@ -1,37 +1,48 @@
 package setup
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/caarlos0/env/v11"
+	"github.com/joho/godotenv"
 )
 
 type (
+	EnvVariables struct {
+		GoEnv           string `env:"GO_ENV" envDefault:"development"`
+		ApplicationName string `env:"APPLICATION_NAME"`
+		DatabaseURL     string `env:"DATABASE_URL"`
+		JWTSecret       string `env:"JWT_SECRET"`
+	}
+
 	Setup struct {
 		ApplicationName string
 		BRLocation      time.Location
+		EnvVariables    EnvVariables
 		ShutdownChan    chan os.Signal
 
 		shutdownWaitGroup sync.WaitGroup
 	}
-
-	SetupConfig struct {
-		ApplicationName string
-	}
 )
 
-func Init(config SetupConfig) *Setup {
-	app := &Setup{
-		ApplicationName: config.ApplicationName,
-	}
+func Init() *Setup {
+	var app Setup
 
 	app.configureBRLocation()
 	app.configureGracefulShutdown()
+	app.configureDevelopmentEnvironment()
+	app.configureEnvironmentVariables()
 
-	return app
+	app.ApplicationName = app.EnvVariables.ApplicationName
+
+	return &app
 }
 
 func (s *Setup) configureBRLocation() {
@@ -58,4 +69,17 @@ func (s *Setup) WaitShutdown() {
 func (s *Setup) Shutdown() {
 	s.shutdownWaitGroup.Done()
 	fmt.Println("Server stopped!")
+}
+
+func (s *Setup) configureDevelopmentEnvironment() {
+	err := godotenv.Load(".env.local")
+	if err != nil && !errors.Is(err, fs.ErrNotExist) && s.EnvVariables.GoEnv == "development" {
+		panic("Failed to setup local environment variables")
+	}
+}
+
+func (s *Setup) configureEnvironmentVariables() {
+	if err := env.Parse(&s.EnvVariables); err != nil {
+		panic("Error parsing environment variables")
+	}
 }
