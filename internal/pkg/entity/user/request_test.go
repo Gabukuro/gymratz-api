@@ -62,6 +62,7 @@ func TestRegisterUserRequestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.request.Validate()
 			assert.Equal(t, tt.expected, err)
 		})
@@ -110,6 +111,7 @@ func TestLoginUserRequestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.request.Validate()
 			assert.Equal(t, tt.expected, err)
 		})

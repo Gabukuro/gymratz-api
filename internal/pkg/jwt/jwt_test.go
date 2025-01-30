@@ -20,6 +20,8 @@ func TestTokenService(t *testing.T) {
 	})
 
 	t.Run("should generate and validate a token to ensure it's correctly generated", func(t *testing.T) {
+		t.Parallel()
+
 		token, err := tokenService.GenerateToken(testEmail)
 		assert.Nil(t, err)
 		assert.NotNil(t, token)
@@ -32,6 +34,8 @@ func TestTokenService(t *testing.T) {
 	})
 
 	t.Run("should return an error when the token is invalid", func(t *testing.T) {
+		t.Parallel()
+
 		invalidToken := "invalid token"
 
 		claims, err := tokenService.ValidateToken(invalidToken)
@@ -40,6 +44,8 @@ func TestTokenService(t *testing.T) {
 	})
 
 	t.Run("should return an error when the token is expired", func(t *testing.T) {
+		t.Parallel()
+
 		token, err := tokenService.GenerateToken(testEmail)
 		assert.Nil(t, err)
 		assert.NotNil(t, token)
