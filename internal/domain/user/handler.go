@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/user"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 )
 
 type (
@@ -32,51 +33,44 @@ func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
 	var req user.RegisterUserRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(
+			response.NewErrorInvalidRequestBody(nil, ""))
 	}
 
-	if !req.Validate() {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
-		})
+	if validationErr := req.Validate(); validationErr != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			response.NewErrorInvalidRequestBody(validationErr, ""))
 	}
 
 	if err := h.service.CreateUser(c.Context(), req.Name, req.Email, req.Password); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil, ""))
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "user created",
-	})
+	return c.Status(fiber.StatusCreated).JSON(response.NewSuccessResponse(
+		user.RegisterUserResponse{
+			Message: "User created successfully",
+		}, ""))
 }
 
 func (h *httpHandler) LoginUser(c *fiber.Ctx) error {
 	var req user.LoginUserRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(
+			response.NewErrorInvalidRequestBody(nil, ""))
 	}
 
-	if !req.Validate() {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
-		})
+	if validationErr := req.Validate(); validationErr != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			response.NewErrorInvalidRequestBody(validationErr, ""))
 	}
 
 	token, err := h.service.LoginUser(c.Context(), req.Email, req.Password)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil, ""))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"token": token,
-	})
+	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(user.LoginUserResponse{Token: token}, ""))
 }
