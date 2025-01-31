@@ -15,6 +15,7 @@ import (
 	"github.com/Gabukuro/gymratz-api/internal/infra/adapters/postgres"
 	"github.com/Gabukuro/gymratz-api/internal/infra/database"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/jwt"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/middleware"
 	"github.com/caarlos0/env/v11"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -72,6 +73,10 @@ func (s *Setup) configureApp() {
 	s.App = fiber.New(fiber.Config{
 		AppName:           s.EnvVariables.ApplicationName,
 		EnablePrintRoutes: true,
+	})
+
+	s.App.Use(func(c *fiber.Ctx) error {
+		return middleware.TraceMiddleware(c)
 	})
 
 	userRepository := postgres.NewUserRepository(s.DB)

@@ -4,17 +4,15 @@ import "github.com/gofiber/fiber/v2"
 
 type (
 	SuccessResponse[T any] struct {
-		Status  string `json:"status"`             // Response status (success/error)
-		Data    T      `json:"data"`               // API data
-		TraceID string `json:"trace_id,omitempty"` // Trace ID (optional)
+		Status string `json:"status"` // Response status (success/error)
+		Data   T      `json:"data"`   // API data
 	}
 
 	ErrorResponse struct {
-		Status  string        `json:"status"`             // Response status (success/error)
-		Message string        `json:"message"`            // Error message
-		Code    int           `json:"code"`               // HTTP status code
-		Details *ErrorDetails `json:"details,omitempty"`  // Error details (optional)
-		TraceID string        `json:"trace_id,omitempty"` // Trace ID (optional)
+		Status  string        `json:"status"`            // Response status (success/error)
+		Message string        `json:"message"`           // Error message
+		Code    int           `json:"code"`              // HTTP status code
+		Details *ErrorDetails `json:"details,omitempty"` // Error details (optional)
 	}
 
 	ErrorDetail struct {
@@ -30,15 +28,14 @@ const (
 	StatusError   = "error"
 )
 
-func NewSuccessResponse(data any, traceID string) SuccessResponse[any] {
+func NewSuccessResponse(data any) SuccessResponse[any] {
 	return SuccessResponse[any]{
-		Status:  StatusSuccess,
-		Data:    data,
-		TraceID: traceID,
+		Status: StatusSuccess,
+		Data:   data,
 	}
 }
 
-func NewErrorResponse(message string, code int, details *ErrorDetails, traceID string) ErrorResponse {
+func NewErrorResponse(message string, code int, details *ErrorDetails) ErrorResponse {
 	if details == nil {
 		details = &ErrorDetails{}
 	}
@@ -48,7 +45,6 @@ func NewErrorResponse(message string, code int, details *ErrorDetails, traceID s
 		Message: message,
 		Code:    code,
 		Details: details,
-		TraceID: traceID,
 	}
 }
 
@@ -59,6 +55,6 @@ func NewErrorDetail(field, message string) ErrorDetail {
 	}
 }
 
-func NewErrorInvalidRequestBody(details *ErrorDetails, traceID string) ErrorResponse {
-	return NewErrorResponse("Invalid request body.", fiber.StatusBadRequest, details, traceID)
+func NewErrorInvalidRequestBody(details *ErrorDetails) ErrorResponse {
+	return NewErrorResponse("Invalid request body.", fiber.StatusBadRequest, details)
 }

@@ -36,12 +36,12 @@ func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(
-			response.NewErrorInvalidRequestBody(nil, ""))
+			response.NewErrorInvalidRequestBody(nil))
 	}
 
 	if validationErr := req.Validate(); validationErr != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
-			response.NewErrorInvalidRequestBody(validationErr, ""))
+			response.NewErrorInvalidRequestBody(validationErr))
 	}
 
 	if err := h.service.CreateUser(c.Context(), req.Name, req.Email, req.Password); err != nil {
@@ -49,17 +49,17 @@ func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusBadRequest).JSON(
 				response.NewErrorInvalidRequestBody(&response.ErrorDetails{
 					response.NewErrorDetail("email", "It looks like this email is already registered on our platform"),
-				}, ""))
+				}))
 		}
 
 		return c.Status(fiber.StatusInternalServerError).JSON(
-			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil, ""))
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil))
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(response.NewSuccessResponse(
 		user.RegisterUserResponse{
 			Message: "User created successfully",
-		}, ""))
+		}))
 }
 
 func (h *httpHandler) LoginUser(c *fiber.Ctx) error {
@@ -67,19 +67,19 @@ func (h *httpHandler) LoginUser(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
-			response.NewErrorInvalidRequestBody(nil, ""))
+			response.NewErrorInvalidRequestBody(nil))
 	}
 
 	if validationErr := req.Validate(); validationErr != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
-			response.NewErrorInvalidRequestBody(validationErr, ""))
+			response.NewErrorInvalidRequestBody(validationErr))
 	}
 
 	token, err := h.service.LoginUser(c.Context(), req.Email, req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(
-			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil, ""))
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(user.LoginUserResponse{Token: token}, ""))
+	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(user.LoginUserResponse{Token: token}))
 }
