@@ -34,9 +34,8 @@ func TestUserHandler(t *testing.T) {
                 "password": "password"
             }`),
 		)
-		req.Header.Set("Content-Type", "application/json")
 
-		resp, err := setup.App.Test(req, -1)
+		resp, err := runRequest(req, setup)
 
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -60,9 +59,8 @@ func TestUserHandler(t *testing.T) {
 				"password": "password"
 			}`),
 		)
-		req.Header.Set("Content-Type", "application/json")
 
-		resp, err := setup.App.Test(req, -1)
+		resp, err := runRequest(req, setup)
 
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -97,9 +95,7 @@ func TestUserHandler(t *testing.T) {
 			}`),
 		)
 
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := setup.App.Test(req, -1)
+		resp, err := runRequest(req, setup)
 
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -123,4 +119,10 @@ func createUser(ctx context.Context, userModel user.Model) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func runRequest(req *http.Request, setup *setup.Setup) (*http.Response, error) {
+	req.Header.Add("Content-Type", "application/json")
+
+	return setup.App.Test(req, 3000)
 }
