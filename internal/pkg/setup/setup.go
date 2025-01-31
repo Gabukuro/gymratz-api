@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -10,8 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Gabukuro/gymratz-api/internal/domain/user"
+	"github.com/Gabukuro/gymratz-api/internal/infra/adapters/postgres"
+	"github.com/Gabukuro/gymratz-api/internal/infra/database"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/jwt"
 	"github.com/caarlos0/env/v11"
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	"github.com/uptrace/bun"
 )
 
 type (
@@ -23,6 +30,9 @@ type (
 	}
 
 	Setup struct {
+		App *fiber.App
+		DB  *bun.DB
+
 		ApplicationName string
 		BRLocation      time.Location
 		EnvVariables    EnvVariables
@@ -32,7 +42,9 @@ type (
 	}
 )
 
-func Init() *Setup {
+func Init() (*Setup, context.Context) {
+	ctx := context.Background()
+
 	var app Setup
 
 	app.configureBRLocation()
@@ -40,9 +52,43 @@ func Init() *Setup {
 	app.configureDevelopmentEnvironment()
 	app.configureEnvironmentVariables()
 
-	app.ApplicationName = app.EnvVariables.ApplicationName
+	ctx = app.configureDatabase(ctx)
+	app.configureApp()
 
-	return &app
+	return &app, ctx
+}
+
+func (s *Setup) configureDatabase(ctx context.Context) context.Context {
+	if s.EnvVariables.GoEnv == "test" {
+		s.DB, ctx = database.NewTestDB(ctx)
+		return ctx
+	}
+
+	s.DB = database.NewDB(s.EnvVariables.DatabaseURL)
+	return ctx
+}
+
+func (s *Setup) configureApp() {
+	s.App = fiber.New(fiber.Config{
+		AppName:           s.EnvVariables.ApplicationName,
+		EnablePrintRoutes: true,
+	})
+
+	userRepository := postgres.NewUserRepository(s.DB)
+
+	tokenService := jwt.NewTokenService(jwt.TokenServiceParams{
+		JwtSecret: s.EnvVariables.JWTSecret,
+	})
+
+	userService := user.NewService(user.ServiceParams{
+		UserRepo:     &userRepository,
+		TokenService: tokenService,
+	})
+
+	user.NewHTTPHandler(user.HTTPHandlerParams{
+		App:     s.App,
+		Service: userService,
+	})
 }
 
 func (s *Setup) configureBRLocation() {
@@ -66,8 +112,10 @@ func (s *Setup) WaitShutdown() {
 	s.shutdownWaitGroup.Wait()
 }
 
-func (s *Setup) Shutdown() {
+func (s *Setup) Shutdown(ctx context.Context) {
 	s.shutdownWaitGroup.Done()
+	ctx.Done()
+
 	fmt.Println("Server stopped!")
 }
 

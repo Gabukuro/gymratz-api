@@ -3,18 +3,18 @@ package response
 import "github.com/gofiber/fiber/v2"
 
 type (
-	SuccessResponse struct {
-		Status  string `json:"status"`             // Status da resposta (success/error)
-		Data    any    `json:"data"`               // Dados retornados pela API
-		TraceID string `json:"trace_id,omitempty"` // ID de rastreamento (opcional)
+	SuccessResponse[T any] struct {
+		Status  string `json:"status"`             // Response status (success/error)
+		Data    T      `json:"data"`               // API data
+		TraceID string `json:"trace_id,omitempty"` // Trace ID (optional)
 	}
 
 	ErrorResponse struct {
-		Status  string        `json:"status"`             // Status da resposta (success/error)
-		Message string        `json:"message"`            // Mensagem de erro
-		Code    int           `json:"code"`               // Código de erro (HTTP status code)
-		Details *ErrorDetails `json:"details,omitempty"`  // Detalhes do erro (opcional)
-		TraceID string        `json:"trace_id,omitempty"` // ID de rastreamento (opcional)
+		Status  string        `json:"status"`             // Response status (success/error)
+		Message string        `json:"message"`            // Error message
+		Code    int           `json:"code"`               // HTTP status code
+		Details *ErrorDetails `json:"details,omitempty"`  // Error details (optional)
+		TraceID string        `json:"trace_id,omitempty"` // Trace ID (optional)
 	}
 
 	ErrorDetail struct {
@@ -30,8 +30,8 @@ const (
 	StatusError   = "error"
 )
 
-func NewSuccessResponse(data any, traceID string) SuccessResponse {
-	return SuccessResponse{
+func NewSuccessResponse(data any, traceID string) SuccessResponse[any] {
+	return SuccessResponse[any]{
 		Status:  StatusSuccess,
 		Data:    data,
 		TraceID: traceID,
@@ -60,5 +60,5 @@ func NewErrorDetail(field, message string) ErrorDetail {
 }
 
 func NewErrorInvalidRequestBody(details *ErrorDetails, traceID string) ErrorResponse {
-	return NewErrorResponse("invalid request body", fiber.StatusBadRequest, details, traceID)
+	return NewErrorResponse("Invalid request body.", fiber.StatusBadRequest, details, traceID)
 }

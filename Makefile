@@ -1,3 +1,5 @@
+.PHONY: init, install, run, test
+
 init:
 	make install
 

@@ -1,6 +1,8 @@
 package user
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/user"
@@ -33,7 +35,7 @@ func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
 	var req user.RegisterUserRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
 			response.NewErrorInvalidRequestBody(nil, ""))
 	}
 
@@ -43,6 +45,13 @@ func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.CreateUser(c.Context(), req.Name, req.Email, req.Password); err != nil {
+		if strings.Contains(err.Error(), "unique_user_email") {
+			return c.Status(fiber.StatusBadRequest).JSON(
+				response.NewErrorInvalidRequestBody(&response.ErrorDetails{
+					response.NewErrorDetail("email", "It looks like this email is already registered on our platform"),
+				}, ""))
+		}
+
 		return c.Status(fiber.StatusInternalServerError).JSON(
 			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil, ""))
 	}
