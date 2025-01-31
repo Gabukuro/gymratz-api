@@ -75,9 +75,7 @@ func (s *Setup) configureApp() {
 		EnablePrintRoutes: true,
 	})
 
-	s.App.Use(func(c *fiber.Ctx) error {
-		return middleware.TraceMiddleware(c)
-	})
+	s.App.Use(middleware.TraceMiddleware())
 
 	userRepository := postgres.NewUserRepository(s.DB)
 
@@ -91,8 +89,9 @@ func (s *Setup) configureApp() {
 	})
 
 	user.NewHTTPHandler(user.HTTPHandlerParams{
-		App:     s.App,
-		Service: userService,
+		App:       s.App,
+		Service:   userService,
+		JWTSecret: s.EnvVariables.JWTSecret,
 	})
 }
 

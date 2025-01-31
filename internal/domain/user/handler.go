@@ -6,13 +6,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/user"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/jwt"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/middleware"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 )
 
 type (
 	HTTPHandlerParams struct {
-		App     *fiber.App
-		Service *Service
+		App       *fiber.App
+		Service   *Service
+		JWTSecret string
 	}
 
 	httpHandler struct {
@@ -29,6 +32,9 @@ func NewHTTPHandler(params HTTPHandlerParams) {
 
 	params.App.Post("/register", httpHandler.RegisterUser)
 	params.App.Post("/login", httpHandler.LoginUser)
+
+	userGroup := params.App.Group("/user", middleware.AuthMiddleware(params.JWTSecret))
+	userGroup.Get("/profile", httpHandler.GetUserProfile)
 }
 
 func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
@@ -77,9 +83,25 @@ func (h *httpHandler) LoginUser(c *fiber.Ctx) error {
 
 	token, err := h.service.LoginUser(c.Context(), req.Email, req.Password)
 	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(
+			response.NewErrorResponse("Unauthorized", fiber.StatusUnauthorized, nil))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(user.LoginUserResponse{Token: token}))
+}
+
+func (h *httpHandler) GetUserProfile(c *fiber.Ctx) error {
+	claims := c.Locals("session").(*jwt.Claims)
+
+	userModel, err := h.service.GetUserProfile(c.Context(), claims.Email)
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(
 			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(user.LoginUserResponse{Token: token}))
+	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(user.GetUserProfileResponse{
+		ID:    userModel.ID,
+		Name:  userModel.Name,
+		Email: userModel.Email,
+	}))
 }

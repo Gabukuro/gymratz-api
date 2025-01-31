@@ -22,8 +22,8 @@ func (r *UserRepository) Create(ctx context.Context, model user.Model) error {
 	return err
 }
 
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (user.Model, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*user.Model, error) {
 	var model user.Model
 	err := r.db.NewSelect().Model(&model).Where("email = ?", email).Scan(ctx)
-	return model, err
+	return &model, err
 }

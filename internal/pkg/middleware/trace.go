@@ -5,7 +5,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func TraceMiddleware(c *fiber.Ctx) error {
-	c.Set("X-Request-ID", uuid.New().String())
-	return c.Next()
+func TraceMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		requestID := uuid.New().String()
+		c.Set("X-Request-ID", requestID)
+
+		c.Response().Header.Set("X-Request-ID", requestID)
+
+		return c.Next()
+	}
 }

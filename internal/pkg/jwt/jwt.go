@@ -57,3 +57,11 @@ func (t *TokenService) ValidateToken(tokenString string) (*Claims, error) {
 
 	return claims, nil
 }
+
+func ValidateToken(tokenString, secret string) (*Claims, error) {
+	service := NewTokenService(TokenServiceParams{
+		JwtSecret: secret,
+	})
+
+	return service.ValidateToken(tokenString)
+}

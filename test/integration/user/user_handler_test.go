@@ -30,7 +30,7 @@ func TestUserHandler(t *testing.T) {
 			"/register",
 			strings.NewReader(`{
                 "name": "test",
-                "email": "test@email.com",
+                "email": "fake@email.com",
                 "password": "password"
             }`),
 		)
@@ -43,9 +43,9 @@ func TestUserHandler(t *testing.T) {
 
 	t.Run("should not create a new user with the same email", func(t *testing.T) {
 		// Create a user with the same email
-		createUser(ctx, user.Model{
+		_ = createUser(ctx, user.Model{
 			Name:     "test",
-			Email:    "email@email.com",
+			Email:    "fake1@email.com",
 			Password: "password",
 		})
 
@@ -55,7 +55,7 @@ func TestUserHandler(t *testing.T) {
 			"/register",
 			strings.NewReader(`{
 				"name": "test",
-				"email": "email@email.com",
+				"email": "fake1@email.com",
 				"password": "password"
 			}`),
 		)
@@ -80,9 +80,9 @@ func TestUserHandler(t *testing.T) {
 	})
 
 	t.Run("should login a user", func(t *testing.T) {
-		createUser(ctx, user.Model{
+		_ = createUser(ctx, user.Model{
 			Name:     "test",
-			Email:    "fake@email.com",
+			Email:    "fake2@email.com",
 			Password: "password123",
 		})
 
@@ -90,7 +90,7 @@ func TestUserHandler(t *testing.T) {
 			http.MethodPost,
 			"/login",
 			strings.NewReader(`{
-				"email": "fake@email.com",
+				"email": "fake2@email.com",
 				"password": "password123"
 			}`),
 		)
@@ -107,9 +107,91 @@ func TestUserHandler(t *testing.T) {
 		assert.Equal(t, response.StatusSuccess, successResponse.Status)
 		assert.NotEmpty(t, successResponse.Data.Token)
 	})
+
+	t.Run("should not login a user with invalid credentials", func(t *testing.T) {
+		_ = createUser(ctx, user.Model{
+			Name:     "test",
+			Email:    "fake3@email.com",
+			Password: "password123",
+		})
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/login",
+			strings.NewReader(`{
+				"email": "fake3@email.com",
+				"password": "wrongpassword"
+			}`),
+		)
+
+		resp, err := runRequest(req, setup)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+		var errorResponse response.ErrorResponse
+
+		body, _ := io.ReadAll(resp.Body)
+		assert.Nil(t, json.Unmarshal(body, &errorResponse))
+		assert.Equal(t, http.StatusUnauthorized, errorResponse.Code)
+		assert.Equal(t, response.StatusError, errorResponse.Status)
+		assert.Equal(t, "Unauthorized", errorResponse.Message)
+
+		assert.Empty(t, *errorResponse.Details)
+	})
+
+	t.Run("should get user profile", func(t *testing.T) {
+		userModel := createUser(ctx, user.Model{
+			Name:     "test",
+			Email:    "fake4@email.com",
+			Password: "password123",
+		})
+
+		// Login the user
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/login",
+			strings.NewReader(`{
+				"email": "fake4@email.com",
+				"password": "password123"
+			}`),
+		)
+
+		resp, err := runRequest(req, setup)
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var loginResponse response.SuccessResponse[user.LoginUserResponse]
+
+		body, _ := io.ReadAll(resp.Body)
+		assert.Nil(t, json.Unmarshal(body, &loginResponse))
+		assert.Equal(t, response.StatusSuccess, loginResponse.Status)
+
+		// Get the user profile
+		req = httptest.NewRequest(
+			http.MethodGet,
+			"/user/profile",
+			nil,
+		)
+		req.Header.Add("Authorization", "Bearer "+*loginResponse.Data.Token)
+
+		resp, err = runRequest(req, setup)
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var profileResponse response.SuccessResponse[user.GetUserProfileResponse]
+
+		body, _ = io.ReadAll(resp.Body)
+		assert.Nil(t, json.Unmarshal(body, &profileResponse))
+		assert.Equal(t, response.StatusSuccess, profileResponse.Status)
+
+		assert.Equal(t, userModel.ID, profileResponse.Data.ID)
+		assert.Equal(t, userModel.Name, profileResponse.Data.Name)
+		assert.Equal(t, userModel.Email, profileResponse.Data.Email)
+	})
 }
 
-func createUser(ctx context.Context, userModel user.Model) {
+func createUser(ctx context.Context, userModel user.Model) user.Model {
 	err := userModel.HashPassword()
 	if err != nil {
 		panic(err)
@@ -119,10 +201,12 @@ func createUser(ctx context.Context, userModel user.Model) {
 	if err != nil {
 		panic(err)
 	}
+
+	return userModel
 }
 
 func runRequest(req *http.Request, setup *setup.Setup) (*http.Response, error) {
 	req.Header.Add("Content-Type", "application/json")
 
-	return setup.App.Test(req, 3000)
+	return setup.App.Test(req, -1)
 }

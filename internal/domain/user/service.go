@@ -59,3 +59,7 @@ func (s *Service) LoginUser(ctx context.Context, email, password string) (*strin
 
 	return &token, nil
 }
+
+func (s *Service) GetUserProfile(ctx context.Context, email string) (*user.Model, error) {
+	return s.userRepo.FindByEmail(ctx, email)
+}

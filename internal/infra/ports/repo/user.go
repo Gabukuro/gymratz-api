@@ -9,6 +9,6 @@ import (
 type (
 	UserRepository interface {
 		Create(ctx context.Context, model user.Model) error
-		FindByEmail(ctx context.Context, email string) (user.Model, error)
+		FindByEmail(ctx context.Context, email string) (*user.Model, error)
 	}
 )
