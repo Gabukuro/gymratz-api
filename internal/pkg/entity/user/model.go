@@ -10,7 +10,7 @@ type (
 	Model struct {
 		bun.BaseModel `bun:"users"`
 		base.Model
-		Name     string `bund:"name"`
+		Name     string `bun:"name"`
 		Email    string `bun:"email"`
 		Password string `bun:"password"`
 	}
