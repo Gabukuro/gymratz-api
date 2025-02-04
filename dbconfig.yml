@@ -1,5 +1,5 @@
 development:
   dialect: postgres
-  datasource: host=localhost dbname=gymratz-api user=postgres sslmode=disable
+  datasource: host=localhost dbname=gymratz-api user=postgres password=postgres sslmode=disable
   table: migrations
   dir: migrations
