@@ -51,7 +51,7 @@ func (h *httpHandler) RegisterUser(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.CreateUser(c.Context(), req.Name, req.Email, req.Password); err != nil {
-		if strings.Contains(err.Error(), "unique_user_email") {
+		if strings.Contains(err.Error(), "idx_users_email") {
 			return c.Status(fiber.StatusBadRequest).JSON(
 				response.NewErrorInvalidRequestBody(&response.ErrorDetails{
 					response.NewErrorDetail("email", "It looks like this email is already registered on our platform"),
