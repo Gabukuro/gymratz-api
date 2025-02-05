@@ -1,6 +1,10 @@
 package response
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"math"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 type (
 	SuccessResponse[T any] struct {
@@ -48,12 +52,22 @@ func NewSuccessResponse(data any) SuccessResponse[any] {
 }
 
 func NewPaginationResponse(data any, pagination Pagination) PaginationResponse[any] {
+	pagination.SetTotalPages()
+
 	return PaginationResponse[any]{
 		SuccessResponse: SuccessResponse[any]{
 			Status: StatusSuccess,
 			Data:   data,
 		},
 		Pagination: pagination,
+	}
+}
+
+func (p *Pagination) SetTotalPages() {
+	if p.TotalItems == 0 {
+		p.TotalPages = 0
+	} else {
+		p.TotalPages = int(math.Ceil(float64(p.TotalItems) / float64(p.PerPage)))
 	}
 }
 

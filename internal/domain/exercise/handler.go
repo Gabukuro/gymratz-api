@@ -71,6 +71,5 @@ func (h *httpHandler) ListExercises(c *fiber.Ctx) error {
 		Page:       reqParams.Page,
 		PerPage:    reqParams.PerPage,
 		TotalItems: total,
-		TotalPages: total / reqParams.PerPage,
 	}))
 }

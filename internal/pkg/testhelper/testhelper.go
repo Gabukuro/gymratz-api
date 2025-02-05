@@ -56,6 +56,22 @@ func ParseSuccessResponseBody[data any](body io.ReadCloser) response.SuccessResp
 	return responseBody
 }
 
+func ParsePaginationResponseBody[data any](body io.ReadCloser) response.PaginationResponse[data] {
+	var responseBody response.PaginationResponse[data]
+
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(bodyBytes, &responseBody)
+	if err != nil {
+		panic(err)
+	}
+
+	return responseBody
+}
+
 func ParseErrorResponseBody(body io.ReadCloser) response.ErrorResponse {
 	var responseBody response.ErrorResponse
 
