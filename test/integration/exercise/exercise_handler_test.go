@@ -38,6 +38,7 @@ func TestExerciseHandler(t *testing.T) {
 			http.MethodPost,
 			"/exercise",
 			requestBody,
+			nil,
 		)
 
 		assert.Nil(t, err)

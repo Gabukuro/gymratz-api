@@ -16,14 +16,18 @@ func RunRequest(
 	method string,
 	path string,
 	body any,
+	header map[string]string,
 ) (*http.Response, error) {
 	req := httptest.NewRequest(
-		http.MethodPost,
-		"/exercise",
+		method,
+		path,
 		parseBodyToStringReader(body),
 	)
 
 	req.Header.Add("Content-Type", "application/json")
+	for key, value := range header {
+		req.Header.Add(key, value)
+	}
 
 	return setup.App.Test(req, -1)
 }
@@ -38,6 +42,22 @@ func parseBodyToStringReader(requestBody any) *strings.Reader {
 
 func ParseSuccessResponseBody[data any](body io.ReadCloser) response.SuccessResponse[data] {
 	var responseBody response.SuccessResponse[data]
+
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(bodyBytes, &responseBody)
+	if err != nil {
+		panic(err)
+	}
+
+	return responseBody
+}
+
+func ParseErrorResponseBody(body io.ReadCloser) response.ErrorResponse {
+	var responseBody response.ErrorResponse
 
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
