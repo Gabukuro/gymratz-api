@@ -20,6 +20,7 @@ The application is primarily written in Golang (version 1.23.3) and utilizes the
   - `github.com/uptrace/bun v1.2.9`
   - `github.com/uptrace/bun/dialect/pgdialect v1.2.9`
   - `github.com/uptrace/bun/driver/pgdriver v1.2.9`
+  - `github.com/uptrace/bun/extra/bundebug v1.2.9`
 - **Crypto**: `golang.org/x/crypto v0.32.0`
 
 ## How to 🚀
