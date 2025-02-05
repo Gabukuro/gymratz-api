@@ -1,4 +1,4 @@
-package msuclegroup
+package musclegroup
 
 import (
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/base"

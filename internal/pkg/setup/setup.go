@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Gabukuro/gymratz-api/internal/domain/exercise"
 	"github.com/Gabukuro/gymratz-api/internal/domain/user"
 	"github.com/Gabukuro/gymratz-api/internal/infra/adapters/postgres"
 	"github.com/Gabukuro/gymratz-api/internal/infra/database"
@@ -20,6 +21,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/extra/bundebug"
 )
 
 type (
@@ -62,10 +64,12 @@ func Init() (*Setup, context.Context) {
 func (s *Setup) configureDatabase(ctx context.Context) context.Context {
 	if s.EnvVariables.GoEnv == "test" {
 		s.DB, ctx = database.NewTestDB(ctx)
-		return ctx
+	} else {
+		s.DB = database.NewDB(s.EnvVariables.DatabaseURL)
 	}
 
-	s.DB = database.NewDB(s.EnvVariables.DatabaseURL)
+	s.DB.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	return ctx
 }
 
@@ -78,6 +82,7 @@ func (s *Setup) configureApp() {
 	s.App.Use(middleware.TraceMiddleware())
 
 	userRepository := postgres.NewUserRepository(s.DB)
+	exerciseRepository := postgres.NewExerciseRepository(s.DB)
 
 	tokenService := jwt.NewTokenService(jwt.TokenServiceParams{
 		JwtSecret: s.EnvVariables.JWTSecret,
@@ -88,10 +93,19 @@ func (s *Setup) configureApp() {
 		TokenService: tokenService,
 	})
 
+	exerciseService := exercise.NewService(exercise.ServiceParams{
+		ExerciseRepo: &exerciseRepository,
+	})
+
 	user.NewHTTPHandler(user.HTTPHandlerParams{
 		App:       s.App,
 		Service:   userService,
 		JWTSecret: s.EnvVariables.JWTSecret,
+	})
+
+	exercise.NewHTTPHandler(exercise.HTTPHandlerParams{
+		App:     s.App,
+		Service: exerciseService,
 	})
 }
 

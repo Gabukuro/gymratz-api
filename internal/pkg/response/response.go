@@ -8,6 +8,18 @@ type (
 		Data   T      `json:"data"`   // API data
 	}
 
+	PaginationResponse[T any] struct {
+		SuccessResponse[T]
+		Pagination Pagination `json:"pagination"` // Pagination metadata
+	}
+
+	Pagination struct {
+		Page       int `json:"page"`        // Current page number
+		PerPage    int `json:"per_page"`    // Number of items per page
+		TotalItems int `json:"total_items"` // Total number of items
+		TotalPages int `json:"total_pages"` // Total number of pages
+	}
+
 	ErrorResponse struct {
 		Status  string        `json:"status"`            // Response status (success/error)
 		Message string        `json:"message"`           // Error message
@@ -32,6 +44,16 @@ func NewSuccessResponse(data any) SuccessResponse[any] {
 	return SuccessResponse[any]{
 		Status: StatusSuccess,
 		Data:   data,
+	}
+}
+
+func NewPaginationResponse(data any, pagination Pagination) PaginationResponse[any] {
+	return PaginationResponse[any]{
+		SuccessResponse: SuccessResponse[any]{
+			Status: StatusSuccess,
+			Data:   data,
+		},
+		Pagination: pagination,
 	}
 }
 
