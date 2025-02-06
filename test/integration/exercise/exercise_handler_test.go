@@ -56,16 +56,17 @@ func TestExerciseHandler(t *testing.T) {
 		// Clean up the database
 		cleanUpDatabase(ctx)
 
-		// Create a new exercise
-		testExercise := createExercise(ctx, &exerciseEntity.Model{
-			Name:        "test exercise",
-			Description: "test description",
-		})
+		// Create a new exercise wit a muscle group
+		testExercise, testMuscleGroup := createExerciseWithMuscleGroup(ctx,
+			"pushup",
+			"pushup description",
+			"chest",
+		)
 
 		// Send a request to list exercises
 		resp, err := testhelper.RunRequest(setup,
 			http.MethodGet,
-			"/exercise?name=test",
+			"/exercise?page=1&per_page=10&name=pushup&muscle_group_names=chest&muscle_group_names=triceps",
 			nil,
 			nil,
 		)
@@ -82,11 +83,50 @@ func TestExerciseHandler(t *testing.T) {
 		assert.Equal(t, 1, responseParsed.Pagination.TotalItems)
 		assert.Equal(t, 1, responseParsed.Pagination.TotalPages)
 
+		// Check the response data
 		assert.Equal(t, 1, len(responseParsed.Data))
 		assert.Equal(t, testExercise.ID, responseParsed.Data[0].ID)
 		assert.Equal(t, testExercise.Name, responseParsed.Data[0].Name)
 		assert.Equal(t, testExercise.Description, responseParsed.Data[0].Description)
+
+		// Check the muscle group
+		assert.Equal(t, 1, len(responseParsed.Data[0].MuscleGroups))
+		assert.Equal(t, testMuscleGroup.Name, responseParsed.Data[0].MuscleGroups[0].Name)
 	})
+}
+
+func cleanUpDatabase(ctx context.Context) {
+	dropExercises(ctx)
+	dropMuscleGroups(ctx)
+}
+
+func createExerciseWithMuscleGroup(ctx context.Context,
+	name string,
+	description string,
+	muscleGroupName string,
+) (exerciseEntity.Model, musclegroup.Model) {
+	muscleGroup := createMuscleGroup(ctx, &musclegroup.Model{
+		Name: muscleGroupName,
+	})
+
+	exerciseEntity := createExercise(ctx, &exerciseEntity.Model{
+		Name:        name,
+		Description: description,
+	})
+
+	createExerciseMuscleGroupAssociation(ctx, exerciseEntity, muscleGroup)
+
+	return exerciseEntity, muscleGroup
+}
+
+func createExerciseMuscleGroupAssociation(ctx context.Context, exercise exerciseEntity.Model, muscleGroup musclegroup.Model) {
+	_, err := database.DB().NewInsert().Model(&exerciseEntity.ExerciseMuscleGroupModel{
+		ExerciseID:    exercise.ID,
+		MuscleGroupID: muscleGroup.ID,
+	}).Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createExercise(ctx context.Context, model *exerciseEntity.Model) exerciseEntity.Model {
@@ -98,20 +138,8 @@ func createExercise(ctx context.Context, model *exerciseEntity.Model) exerciseEn
 	return *model
 }
 
-func cleanUpDatabase(ctx context.Context) {
-	dropExercises(ctx)
-	dropMuscleGroups(ctx)
-}
-
 func dropExercises(ctx context.Context) {
 	_, err := database.DB().NewDelete().Model(&exerciseEntity.Model{}).Where("1 = 1").Exec(ctx)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func dropMuscleGroups(ctx context.Context) {
-	_, err := database.DB().NewDelete().Model(&musclegroup.Model{}).Where("1 = 1").Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -124,4 +152,11 @@ func createMuscleGroup(ctx context.Context, model *musclegroup.Model) musclegrou
 	}
 
 	return *model
+}
+
+func dropMuscleGroups(ctx context.Context) {
+	_, err := database.DB().NewDelete().Model(&musclegroup.Model{}).Where("1 = 1").Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
 }

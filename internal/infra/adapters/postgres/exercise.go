@@ -51,11 +51,12 @@ func (r *ExerciseRepository) GetPaginated(ctx context.Context, params exercise.L
 		Join("LEFT JOIN exercise_muscle_groups emg ON mg.id = emg.muscle_group_id")
 
 	if len(params.MuscleGroupNames) > 0 {
-		subQuery.Where("mg.name IN ?", bun.In(params.MuscleGroupNames))
+		subQuery.Where("mg.name IN (?)", bun.In(params.MuscleGroupNames))
 	}
 
 	query := r.GetDB().NewSelect().
 		Model(&models).
+		Relation("MuscleGroups").
 		Limit(limit).
 		Offset(offset)
 

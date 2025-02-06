@@ -4,10 +4,10 @@ import "github.com/google/uuid"
 
 type (
 	ListExercisesQueryParams struct {
-		Page             int      `json:"page"`
-		PerPage          int      `json:"per_page"`
-		Name             string   `json:"name"`
-		MuscleGroupNames []string `json:"muscle_group_names"`
+		Page             int      `query:"page"`
+		PerPage          int      `query:"per_page"`
+		Name             string   `query:"name"`
+		MuscleGroupNames []string `query:"muscle_group_names"`
 	}
 
 	CreateExerciseRequest struct {
