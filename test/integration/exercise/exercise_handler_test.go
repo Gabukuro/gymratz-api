@@ -65,7 +65,7 @@ func TestExerciseHandler(t *testing.T) {
 		// Send a request to list exercises
 		resp, err := testhelper.RunRequest(setup,
 			http.MethodGet,
-			"/exercise",
+			"/exercise?name=test",
 			nil,
 			nil,
 		)

@@ -3,9 +3,11 @@ package exercise
 import "github.com/google/uuid"
 
 type (
-	ListExercisesRequest struct {
-		Page    int `json:"page"`
-		PerPage int `json:"per_page"`
+	ListExercisesQueryParams struct {
+		Page             int      `json:"page"`
+		PerPage          int      `json:"per_page"`
+		Name             string   `json:"name"`
+		MuscleGroupNames []string `json:"muscle_group_names"`
 	}
 
 	CreateExerciseRequest struct {

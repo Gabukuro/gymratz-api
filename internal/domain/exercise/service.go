@@ -62,10 +62,8 @@ func (s *Service) createExerciseAssociations(
 	return s.exerciseRepo.CreateExerciseMuscleGroupAssociations(ctx, associations)
 }
 
-func (s *Service) ListExercises(ctx context.Context, params exercise.ListExercisesRequest) ([]*exercise.Model, int, error) {
-	offset := (params.Page - 1) * params.PerPage
-
-	exercises, err := s.exerciseRepo.GetPaginated(ctx, params.PerPage, offset)
+func (s *Service) ListExercises(ctx context.Context, params exercise.ListExercisesQueryParams) ([]*exercise.Model, int, error) {
+	exercises, err := s.exerciseRepo.GetPaginated(ctx, params)
 	if err != nil {
 		return nil, 0, err
 	}

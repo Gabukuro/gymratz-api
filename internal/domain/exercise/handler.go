@@ -45,9 +45,9 @@ func (h *httpHandler) CreateExercise(c *fiber.Ctx) error {
 }
 
 func (h *httpHandler) ListExercises(c *fiber.Ctx) error {
-	var reqParams exercise.ListExercisesRequest
+	var reqParams exercise.ListExercisesQueryParams
 
-	if err := c.BodyParser(&reqParams); err != nil {
+	if err := c.QueryParser(&reqParams); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(
 			response.NewErrorInvalidRequestBody(nil))
 	}

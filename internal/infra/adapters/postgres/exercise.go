@@ -40,9 +40,35 @@ func (r *ExerciseRepository) GetByID(ctx context.Context, id uuid.UUID) (*exerci
 	return model, err
 }
 
-func (r *ExerciseRepository) GetPaginated(ctx context.Context, limit, offset int) ([]*exercise.Model, error) {
+func (r *ExerciseRepository) GetPaginated(ctx context.Context, params exercise.ListExercisesQueryParams) ([]*exercise.Model, error) {
 	var models []*exercise.Model
-	err := r.GetDB().NewSelect().Model(&models).Limit(limit).Offset(offset).Scan(ctx)
+	limit := params.PerPage
+	offset := (params.Page - 1) * params.PerPage
+
+	subQuery := r.GetDB().NewSelect().
+		ColumnExpr("emg.exercise_id").
+		TableExpr("muscle_groups as mg").
+		Join("LEFT JOIN exercise_muscle_groups emg ON mg.id = emg.muscle_group_id")
+
+	if len(params.MuscleGroupNames) > 0 {
+		subQuery.Where("mg.name IN ?", bun.In(params.MuscleGroupNames))
+	}
+
+	query := r.GetDB().NewSelect().
+		Model(&models).
+		Limit(limit).
+		Offset(offset)
+
+	if len(params.MuscleGroupNames) > 0 {
+		query.Where("id IN (?)", subQuery)
+	}
+
+	if params.Name != "" {
+		query.Where("name ILIKE ?", "%"+params.Name+"%")
+	}
+
+	err := query.Scan(ctx)
+
 	return models, err
 }
 
