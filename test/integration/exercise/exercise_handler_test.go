@@ -112,14 +112,16 @@ func TestExerciseHandler(t *testing.T) {
 		})
 
 		// Send a request to update the exercise
+		updateExerciseRequest := exerciseEntity.UpdateExerciseRequest{
+			Name:           "pushup updated",
+			Description:    "pushup description updated",
+			MuscleGroupIDs: []uuid.UUID{testMuscleGroup.ID, newMuscleGroup.ID},
+		}
+
 		rep, err := testhelper.RunRequest(setup,
 			http.MethodPut,
 			"/exercise/"+testExercise.ID.String(),
-			exerciseEntity.UpdateExerciseRequest{
-				Name:           "pushup updated",
-				Description:    "pushup description updated",
-				MuscleGroupIDs: []uuid.UUID{testMuscleGroup.ID, newMuscleGroup.ID},
-			},
+			updateExerciseRequest,
 			nil,
 		)
 
@@ -128,8 +130,8 @@ func TestExerciseHandler(t *testing.T) {
 
 		responseParsed := testhelper.ParseSuccessResponseBody[exerciseEntity.Model](rep.Body)
 		assert.Equal(t, response.StatusSuccess, responseParsed.Status)
-		assert.Equal(t, "pushup updated", responseParsed.Data.Name)
-		assert.Equal(t, "pushup description updated", responseParsed.Data.Description)
+		assert.Equal(t, updateExerciseRequest.Name, responseParsed.Data.Name)
+		assert.Equal(t, updateExerciseRequest.Description, responseParsed.Data.Description)
 
 		// Check the muscle groups
 		assert.Equal(t, 2, len(responseParsed.Data.MuscleGroups))

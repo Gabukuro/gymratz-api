@@ -58,7 +58,7 @@ func NewTestDB(ctx context.Context) (*bun.DB, context.Context) {
 	}
 
 	db, ctx := setupTestContainers(ctx)
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	runMigrations(db)
 
 	testDB = bun.NewDB(db, pgdialect.New())
