@@ -76,3 +76,18 @@ func (r *ExerciseRepository) GetPaginated(ctx context.Context, params exercise.L
 func (r *ExerciseRepository) Count(ctx context.Context) (int, error) {
 	return r.GetDB().NewSelect().Model((*exercise.Model)(nil)).Count(ctx)
 }
+
+func (r *ExerciseRepository) Update(ctx context.Context, id uuid.UUID, model *exercise.Model) error {
+	_, err := r.GetDB().NewUpdate().Model(model).Where("id = ?", id).Exec(ctx)
+	return err
+}
+
+func (r *ExerciseRepository) UpdateExerciseMuscleGroupAssociations(ctx context.Context, exerciseID uuid.UUID, associations []*exercise.ExerciseMuscleGroupModel) error {
+	_, err := r.GetDB().NewDelete().Model(&exercise.ExerciseMuscleGroupModel{}).Where("exercise_id = ?", exerciseID).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.GetDB().NewInsert().Model(&associations).Exec(ctx)
+	return err
+}

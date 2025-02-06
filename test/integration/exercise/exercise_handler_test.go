@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/Gabukuro/gymratz-api/internal/infra/database"
@@ -92,6 +93,50 @@ func TestExerciseHandler(t *testing.T) {
 		// Check the muscle group
 		assert.Equal(t, 1, len(responseParsed.Data[0].MuscleGroups))
 		assert.Equal(t, testMuscleGroup.Name, responseParsed.Data[0].MuscleGroups[0].Name)
+	})
+
+	t.Run("should update an exercise", func(t *testing.T) {
+		// Clean up the database
+		cleanUpDatabase(ctx)
+
+		// Create a new exercise wit a muscle group
+		testExercise, testMuscleGroup := createExerciseWithMuscleGroup(ctx,
+			"pushup",
+			"pushup description",
+			"chest",
+		)
+
+		// Create a new muscle group
+		newMuscleGroup := createMuscleGroup(ctx, &musclegroup.Model{
+			Name: "triceps",
+		})
+
+		// Send a request to update the exercise
+		rep, err := testhelper.RunRequest(setup,
+			http.MethodPut,
+			"/exercise/"+testExercise.ID.String(),
+			exerciseEntity.UpdateExerciseRequest{
+				Name:           "pushup updated",
+				Description:    "pushup description updated",
+				MuscleGroupIDs: []uuid.UUID{testMuscleGroup.ID, newMuscleGroup.ID},
+			},
+			nil,
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, rep.StatusCode)
+
+		responseParsed := testhelper.ParseSuccessResponseBody[exerciseEntity.Model](rep.Body)
+		assert.Equal(t, response.StatusSuccess, responseParsed.Status)
+		assert.Equal(t, "pushup updated", responseParsed.Data.Name)
+		assert.Equal(t, "pushup description updated", responseParsed.Data.Description)
+
+		// Check the muscle groups
+		assert.Equal(t, 2, len(responseParsed.Data.MuscleGroups))
+		muscleGroupsIDS := []uuid.UUID{testMuscleGroup.ID, newMuscleGroup.ID}
+		for _, muscleGroup := range responseParsed.Data.MuscleGroups {
+			assert.True(t, slices.Contains(muscleGroupsIDS, muscleGroup.ID))
+		}
 	})
 }
 

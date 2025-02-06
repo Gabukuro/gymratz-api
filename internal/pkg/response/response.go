@@ -94,3 +94,7 @@ func NewErrorDetail(field, message string) ErrorDetail {
 func NewErrorInvalidRequestBody(details *ErrorDetails) ErrorResponse {
 	return NewErrorResponse("Invalid request body.", fiber.StatusBadRequest, details)
 }
+
+func NewErrorInvalidURLParam(details *ErrorDetails) ErrorResponse {
+	return NewErrorResponse("Invalid URL parameter.", fiber.StatusBadRequest, details)
+}
