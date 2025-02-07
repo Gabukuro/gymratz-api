@@ -2,6 +2,7 @@ package exercise
 
 import (
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/exercise"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/middleware"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -9,8 +10,9 @@ import (
 
 type (
 	HTTPHandlerParams struct {
-		App     *fiber.App
-		Service *Service
+		App       *fiber.App
+		Service   *Service
+		JWTSecret string
 	}
 
 	httpHandler struct {
@@ -23,7 +25,7 @@ func NewHTTPHandler(params HTTPHandlerParams) {
 		service: params.Service,
 	}
 
-	exerciseGroup := params.App.Group("/exercise")
+	exerciseGroup := params.App.Group("/exercise", middleware.AuthMiddleware(params.JWTSecret))
 	exerciseGroup.Post("/", httpHandler.CreateExercise)
 	exerciseGroup.Get("/", httpHandler.ListExercises)
 	exerciseGroup.Put("/:id", httpHandler.UpdateExercise)

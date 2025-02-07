@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"time"
 
+	internalJWT "github.com/Gabukuro/gymratz-api/internal/pkg/jwt"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/setup"
+	"github.com/golang-jwt/jwt"
 )
 
 func RunRequest(
@@ -24,6 +27,10 @@ func RunRequest(
 		parseBodyToStringReader(body),
 	)
 
+	if _, ok := header["Authorization"]; !ok {
+		req.Header.Add("Authorization", generateAuthToken(setup.EnvVariables.JWTSecret))
+	}
+
 	req.Header.Add("Content-Type", "application/json")
 	for key, value := range header {
 		req.Header.Add(key, value)
@@ -38,6 +45,25 @@ func parseBodyToStringReader(requestBody any) *strings.Reader {
 		panic(err)
 	}
 	return strings.NewReader(string(jsonBody))
+}
+
+func generateAuthToken(secret string) string {
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := internalJWT.Claims{
+		Email: "test@email.com",
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			Issuer:    "gymratz-api-test",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(secret))
+	if err != nil {
+		panic(err)
+	}
+
+	return "Bearer " + signedToken
 }
 
 func ParseSuccessResponseBody[data any](body io.ReadCloser) response.SuccessResponse[data] {

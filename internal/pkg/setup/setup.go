@@ -104,8 +104,9 @@ func (s *Setup) configureApp() {
 	})
 
 	exercise.NewHTTPHandler(exercise.HTTPHandlerParams{
-		App:     s.App,
-		Service: exerciseService,
+		App:       s.App,
+		Service:   exerciseService,
+		JWTSecret: s.EnvVariables.JWTSecret,
 	})
 }
 
