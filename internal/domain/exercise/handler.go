@@ -27,6 +27,7 @@ func NewHTTPHandler(params HTTPHandlerParams) {
 	exerciseGroup.Post("/", httpHandler.CreateExercise)
 	exerciseGroup.Get("/", httpHandler.ListExercises)
 	exerciseGroup.Put("/:id", httpHandler.UpdateExercise)
+	exerciseGroup.Delete("/:id", httpHandler.DeleteExercise)
 }
 
 func (h *httpHandler) CreateExercise(c *fiber.Ctx) error {
@@ -99,4 +100,22 @@ func (h *httpHandler) UpdateExercise(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(exercise))
+}
+
+func (h *httpHandler) DeleteExercise(c *fiber.Ctx) error {
+	exerciseID, err := uuid.ParseBytes([]byte(c.Params("id")))
+	if err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
+			response.NewErrorInvalidURLParam(&response.ErrorDetails{
+				response.NewErrorDetail("id", "Invalid UUID format"),
+			}))
+	}
+
+	err = h.service.DeleteExercise(c.Context(), exerciseID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil))
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(nil)
 }

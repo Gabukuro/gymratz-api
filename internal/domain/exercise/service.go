@@ -114,3 +114,7 @@ func (s *Service) updateExerciseAssociations(ctx context.Context, exerciseID uui
 
 	return s.exerciseRepo.UpdateExerciseMuscleGroupAssociations(ctx, exerciseID, associations)
 }
+
+func (s *Service) DeleteExercise(ctx context.Context, id uuid.UUID) error {
+	return s.exerciseRepo.Delete(ctx, id)
+}

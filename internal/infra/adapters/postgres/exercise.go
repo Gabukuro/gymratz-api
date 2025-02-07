@@ -91,3 +91,8 @@ func (r *ExerciseRepository) UpdateExerciseMuscleGroupAssociations(ctx context.C
 	_, err = r.GetDB().NewInsert().Model(&associations).Exec(ctx)
 	return err
 }
+
+func (r *ExerciseRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.GetDB().NewDelete().Model(&exercise.Model{}).Where("id = ?", id).Exec(ctx)
+	return err
+}

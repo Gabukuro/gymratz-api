@@ -2,6 +2,7 @@ package exercise__test
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"os"
 	"slices"
@@ -140,6 +141,33 @@ func TestExerciseHandler(t *testing.T) {
 			assert.True(t, slices.Contains(muscleGroupsIDS, muscleGroup.ID))
 		}
 	})
+
+	t.Run("should delete an exercise", func(t *testing.T) {
+		// Clean up the database
+		cleanUpDatabase(ctx)
+
+		// Create a new exercise wit a muscle group
+		testExercise, _ := createExerciseWithMuscleGroup(ctx,
+			"pushup",
+			"pushup description",
+			"chest",
+		)
+
+		// Send a request to delete the exercise
+		rep, err := testhelper.RunRequest(setup,
+			http.MethodDelete,
+			"/exercise/"+testExercise.ID.String(),
+			nil,
+			nil,
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusNoContent, rep.StatusCode)
+
+		// Check if the exercise was deleted
+		exercise := getExerciseByID(ctx, testExercise.ID)
+		assert.Nil(t, exercise)
+	})
 }
 
 func cleanUpDatabase(ctx context.Context) {
@@ -183,6 +211,18 @@ func createExercise(ctx context.Context, model *exerciseEntity.Model) exerciseEn
 	}
 
 	return *model
+}
+
+func getExerciseByID(ctx context.Context, id uuid.UUID) *exerciseEntity.Model {
+	model := &exerciseEntity.Model{}
+	err := database.DB().NewSelect().Model(model).Where("id = ?", id).Scan(ctx)
+	if err != nil && err == sql.ErrNoRows {
+		return nil
+	} else if err != nil {
+		panic(err)
+	}
+
+	return model
 }
 
 func dropExercises(ctx context.Context) {

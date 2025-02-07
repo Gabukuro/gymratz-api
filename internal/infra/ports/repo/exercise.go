@@ -18,5 +18,6 @@ type (
 		Count(ctx context.Context) (int, error)
 		Update(ctx context.Context, id uuid.UUID, model *exercise.Model) error
 		UpdateExerciseMuscleGroupAssociations(ctx context.Context, id uuid.UUID, associations []*exercise.ExerciseMuscleGroupModel) error
+		Delete(ctx context.Context, id uuid.UUID) error
 	}
 )
