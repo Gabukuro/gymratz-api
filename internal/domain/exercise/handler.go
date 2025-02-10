@@ -25,7 +25,7 @@ func NewHTTPHandler(params HTTPHandlerParams) {
 		service: params.Service,
 	}
 
-	exerciseGroup := params.App.Group("/exercise", middleware.AuthMiddleware(params.JWTSecret))
+	exerciseGroup := params.App.Group("/exercises", middleware.AuthMiddleware(params.JWTSecret))
 	exerciseGroup.Post("/", httpHandler.CreateExercise)
 	exerciseGroup.Get("/", httpHandler.ListExercises)
 	exerciseGroup.Put("/:id", httpHandler.UpdateExercise)

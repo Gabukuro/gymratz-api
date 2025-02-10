@@ -33,7 +33,7 @@ func NewHTTPHandler(params HTTPHandlerParams) {
 	params.App.Post("/register", httpHandler.RegisterUser)
 	params.App.Post("/login", httpHandler.LoginUser)
 
-	userGroup := params.App.Group("/user", middleware.AuthMiddleware(params.JWTSecret))
+	userGroup := params.App.Group("/users", middleware.AuthMiddleware(params.JWTSecret))
 	userGroup.Get("/profile", httpHandler.GetUserProfile)
 }
 

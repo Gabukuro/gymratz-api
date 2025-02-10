@@ -168,7 +168,7 @@ func TestUserHandler(t *testing.T) {
 		resp, err = testhelper.RunRequest(
 			setup,
 			http.MethodGet,
-			"/user/profile",
+			"/users/profile",
 			nil,
 			map[string]string{
 				"Authorization": fmt.Sprintf("Bearer %s", *loginResponse.Data.Token),

@@ -38,7 +38,7 @@ func TestExerciseHandler(t *testing.T) {
 
 		resp, err := testhelper.RunRequest(setup,
 			http.MethodPost,
-			"/exercise",
+			"/exercises",
 			requestBody,
 			nil,
 		)
@@ -68,7 +68,7 @@ func TestExerciseHandler(t *testing.T) {
 		// Send a request to list exercises
 		resp, err := testhelper.RunRequest(setup,
 			http.MethodGet,
-			"/exercise?page=1&per_page=10&name=pushup&muscle_group_names=chest&muscle_group_names=triceps",
+			"/exercises?page=1&per_page=10&name=pushup&muscle_group_names=chest&muscle_group_names=triceps",
 			nil,
 			nil,
 		)
@@ -121,7 +121,7 @@ func TestExerciseHandler(t *testing.T) {
 
 		rep, err := testhelper.RunRequest(setup,
 			http.MethodPut,
-			"/exercise/"+testExercise.ID.String(),
+			"/exercises/"+testExercise.ID.String(),
 			updateExerciseRequest,
 			nil,
 		)
@@ -156,7 +156,7 @@ func TestExerciseHandler(t *testing.T) {
 		// Send a request to delete the exercise
 		rep, err := testhelper.RunRequest(setup,
 			http.MethodDelete,
-			"/exercise/"+testExercise.ID.String(),
+			"/exercises/"+testExercise.ID.String(),
 			nil,
 			nil,
 		)
