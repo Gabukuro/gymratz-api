@@ -26,7 +26,7 @@ func TestMuscleGroupHandler(t *testing.T) {
 		resp, err := testhelper.RunRequest(
 			setup,
 			http.MethodPost,
-			"/musclegroup",
+			"/muscle-groups",
 			&musclegroup.CreateMuscleGroupRequest{
 				Name: "Chest",
 			},
@@ -56,7 +56,7 @@ func TestMuscleGroupHandler(t *testing.T) {
 		resp, err := testhelper.RunRequest(
 			setup,
 			http.MethodGet,
-			"/musclegroup",
+			"/muscle-groups",
 			nil,
 			nil,
 		)
@@ -91,7 +91,7 @@ func TestMuscleGroupHandler(t *testing.T) {
 		resp, err := testhelper.RunRequest(
 			setup,
 			http.MethodPut,
-			"/musclegroup/"+muscleGroup.ID.String(),
+			"/muscle-groups/"+muscleGroup.ID.String(),
 			&musclegroup.UpdateMuscleGroupRequest{
 				Name: "Chest Updated",
 			},
@@ -117,7 +117,7 @@ func TestMuscleGroupHandler(t *testing.T) {
 		resp, err := testhelper.RunRequest(
 			setup,
 			http.MethodDelete,
-			"/musclegroup/"+muscleGroup.ID.String(),
+			"/muscle-groups/"+muscleGroup.ID.String(),
 			nil,
 			nil,
 		)

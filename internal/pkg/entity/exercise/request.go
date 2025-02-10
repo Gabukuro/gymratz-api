@@ -1,11 +1,13 @@
 package exercise
 
-import "github.com/google/uuid"
+import (
+	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/base"
+	"github.com/google/uuid"
+)
 
 type (
 	ListExercisesQueryParams struct {
-		Page             int      `query:"page"`
-		PerPage          int      `query:"per_page"`
+		base.ListQueryParams
 		Name             string   `query:"name"`
 		MuscleGroupNames []string `query:"muscle_group_names"`
 	}

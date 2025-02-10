@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Gabukuro/gymratz-api/internal/domain/exercise"
+	"github.com/Gabukuro/gymratz-api/internal/domain/musclegroup"
 	"github.com/Gabukuro/gymratz-api/internal/domain/user"
 	"github.com/Gabukuro/gymratz-api/internal/infra/adapters/postgres"
 	"github.com/Gabukuro/gymratz-api/internal/infra/database"
@@ -83,6 +84,7 @@ func (s *Setup) configureApp() {
 
 	userRepository := postgres.NewUserRepository(s.DB)
 	exerciseRepository := postgres.NewExerciseRepository(s.DB)
+	muscleGroupRepository := postgres.NewMuscleGroupRepository(s.DB)
 
 	tokenService := jwt.NewTokenService(jwt.TokenServiceParams{
 		JwtSecret: s.EnvVariables.JWTSecret,
@@ -97,6 +99,10 @@ func (s *Setup) configureApp() {
 		ExerciseRepo: &exerciseRepository,
 	})
 
+	muscleGroupService := musclegroup.NewService(musclegroup.ServiceParams{
+		MuscleGroupRepo: &muscleGroupRepository,
+	})
+
 	user.NewHTTPHandler(user.HTTPHandlerParams{
 		App:       s.App,
 		Service:   userService,
@@ -106,6 +112,12 @@ func (s *Setup) configureApp() {
 	exercise.NewHTTPHandler(exercise.HTTPHandlerParams{
 		App:       s.App,
 		Service:   exerciseService,
+		JWTSecret: s.EnvVariables.JWTSecret,
+	})
+
+	musclegroup.NewHTTPHandler(musclegroup.HTTPHandlerParams{
+		App:       s.App,
+		Service:   muscleGroupService,
 		JWTSecret: s.EnvVariables.JWTSecret,
 	})
 }

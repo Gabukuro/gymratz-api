@@ -57,14 +57,7 @@ func (h *httpHandler) ListExercises(c *fiber.Ctx) error {
 			response.NewErrorInvalidRequestBody(nil))
 	}
 
-	if reqParams.PerPage == 0 || reqParams.Page == 0 {
-		reqParams.PerPage = 10
-		reqParams.Page = 1
-	}
-
-	if reqParams.PerPage > 100 {
-		reqParams.PerPage = 100
-	}
+	reqParams.ValidateAndSetDefaults()
 
 	exercises, total, err := h.service.ListExercises(c.Context(), reqParams)
 	if err != nil {
@@ -80,7 +73,7 @@ func (h *httpHandler) ListExercises(c *fiber.Ctx) error {
 }
 
 func (h *httpHandler) UpdateExercise(c *fiber.Ctx) error {
-	exerciseID, err := uuid.ParseBytes([]byte(c.Params("id")))
+	exerciseID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(
 			response.NewErrorInvalidURLParam(&response.ErrorDetails{
