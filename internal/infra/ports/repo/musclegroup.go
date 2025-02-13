@@ -12,8 +12,7 @@ type (
 		Repository
 
 		Create(ctx context.Context, model *musclegroup.Model) error
-		GetPaginated(ctx context.Context, params musclegroup.ListMuscleGroupsQueryParams) ([]*musclegroup.Model, error)
-		Count(ctx context.Context) (int, error)
+		GetPaginated(ctx context.Context, params musclegroup.ListMuscleGroupsQueryParams) ([]*musclegroup.Model, int, error)
 		Update(ctx context.Context, id uuid.UUID, model *musclegroup.Model) error
 		Delete(ctx context.Context, id uuid.UUID) error
 	}

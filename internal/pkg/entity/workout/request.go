@@ -1,6 +1,9 @@
 package workout
 
-import "github.com/google/uuid"
+import (
+	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/base"
+	"github.com/google/uuid"
+)
 
 type (
 	CreateWorkoutRequest struct {
@@ -17,5 +20,10 @@ type (
 		Duration    *int      `json:"duration"`
 		RestTime    int       `json:"rest_time"`
 		Notes       *string   `json:"notes"`
+	}
+
+	ListWorkoutsQueryParams struct {
+		base.ListQueryParams
+		Name string `json:"name"`
 	}
 )

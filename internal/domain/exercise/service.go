@@ -64,17 +64,7 @@ func (s *Service) createExerciseAssociations(
 }
 
 func (s *Service) ListExercises(ctx context.Context, params exercise.ListExercisesQueryParams) ([]*exercise.Model, int, error) {
-	exercises, err := s.exerciseRepo.GetPaginated(ctx, params)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	total, err := s.exerciseRepo.Count(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return exercises, total, nil
+	return s.exerciseRepo.GetPaginated(ctx, params)
 }
 
 func (s *Service) UpdateExercise(ctx context.Context, id uuid.UUID, exerciseEdited exercise.UpdateExerciseRequest) (*exercise.Model, error) {

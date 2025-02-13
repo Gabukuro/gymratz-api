@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,8 @@ import (
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/exercise"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/musclegroup"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/user"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/workout"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/workoutexercise"
 	internalJWT "github.com/Gabukuro/gymratz-api/internal/pkg/jwt"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/setup"
@@ -35,7 +38,7 @@ func RunRequest(
 	)
 
 	if _, ok := header["Authorization"]; !ok {
-		req.Header.Add("Authorization", generateAuthToken(setup.EnvVariables.JWTSecret))
+		req.Header.Add("Authorization", GenerateAuthToken(setup.EnvVariables.JWTSecret, nil))
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -54,10 +57,14 @@ func parseBodyToStringReader(requestBody any) *strings.Reader {
 	return strings.NewReader(string(jsonBody))
 }
 
-func generateAuthToken(secret string) string {
+func GenerateAuthToken(secret string, email *string) string {
+	if email == nil {
+		email = GetPointer("test@email.com")
+	}
+
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := internalJWT.Claims{
-		Email: "test@email.com",
+		Email: *email,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 			Issuer:    "gymratz-api-test",
@@ -132,6 +139,14 @@ func CleanUpDatabase(ctx context.Context, database *bun.DB) {
 }
 
 func CreateUser(ctx context.Context, database *bun.DB, model *user.Model) user.Model {
+	if model == nil {
+		model = &user.Model{
+			Name:     "John Doe",
+			Email:    "john@doe.com",
+			Password: "password",
+		}
+	}
+
 	model.HashPassword()
 	_, err := database.NewInsert().Model(model).Exec(ctx)
 	if err != nil {
@@ -146,6 +161,54 @@ func dropUsers(ctx context.Context, database *bun.DB) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func CreateUserManyWorkout(
+	ctx context.Context,
+	database *bun.DB,
+	userID uuid.UUID,
+	n int,
+) map[string]workout.Model {
+	workoutModels := make(map[string]workout.Model, n)
+
+	for i := 0; i < n; i++ {
+		workoutModel := workout.Model{
+			UserID: userID,
+			Name:   fmt.Sprintf("Test workout #%d", i),
+		}
+
+		_, err := database.NewInsert().Model(&workoutModel).Exec(ctx)
+		if err != nil {
+			panic(err)
+		}
+
+		exercise, _ := CreateExerciseWithMuscleGroup(ctx, database,
+			fmt.Sprintf("Test exercise #%d", i),
+			fmt.Sprintf("Test exercise description #%d", i),
+			fmt.Sprintf("Test muscle group #%d", i),
+		)
+
+		_, err = database.NewInsert().Model(&workoutexercise.Model{
+			WorkoutID:   workoutModel.ID,
+			ExerciseID:  exercise.ID,
+			Sets:        3,
+			Repetitions: GetPointer(10),
+			Weight:      GetPointer(20.0),
+			Duration:    GetPointer(0),
+			RestTime:    60,
+			Notes:       GetPointer("This is a note"),
+		}).Exec(ctx)
+
+		if err != nil {
+			panic(err)
+		}
+
+		_ = database.NewSelect().Model(&workoutModel).Relation("WorkoutExercises.Exercise").Where("id = ?", workoutModel.ID).Scan(ctx)
+
+		workoutModels[workoutModel.ID.String()] = workoutModel
+	}
+
+	return workoutModels
 }
 
 func CreateExerciseWithMuscleGroup(

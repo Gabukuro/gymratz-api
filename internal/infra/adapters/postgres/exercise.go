@@ -40,7 +40,7 @@ func (r *ExerciseRepository) GetByID(ctx context.Context, id uuid.UUID) (*exerci
 	return model, err
 }
 
-func (r *ExerciseRepository) GetPaginated(ctx context.Context, params exercise.ListExercisesQueryParams) ([]*exercise.Model, error) {
+func (r *ExerciseRepository) GetPaginated(ctx context.Context, params exercise.ListExercisesQueryParams) ([]*exercise.Model, int, error) {
 	var models []*exercise.Model
 	limit := params.PerPage
 	offset := (params.Page - 1) * params.PerPage
@@ -69,12 +69,13 @@ func (r *ExerciseRepository) GetPaginated(ctx context.Context, params exercise.L
 	}
 
 	err := query.Scan(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
 
-	return models, err
-}
+	total, err := query.Count(ctx)
 
-func (r *ExerciseRepository) Count(ctx context.Context) (int, error) {
-	return r.GetDB().NewSelect().Model((*exercise.Model)(nil)).Count(ctx)
+	return models, total, err
 }
 
 func (r *ExerciseRepository) Update(ctx context.Context, id uuid.UUID, model *exercise.Model) error {

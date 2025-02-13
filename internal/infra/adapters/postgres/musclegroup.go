@@ -27,7 +27,7 @@ func (r *MuscleGroupRepository) Create(ctx context.Context, model *musclegroup.M
 	return err
 }
 
-func (r *MuscleGroupRepository) GetPaginated(ctx context.Context, params musclegroup.ListMuscleGroupsQueryParams) ([]*musclegroup.Model, error) {
+func (r *MuscleGroupRepository) GetPaginated(ctx context.Context, params musclegroup.ListMuscleGroupsQueryParams) ([]*musclegroup.Model, int, error) {
 	var models []*musclegroup.Model
 	limit := params.PerPage
 	offset := (params.Page - 1) * params.PerPage
@@ -42,12 +42,13 @@ func (r *MuscleGroupRepository) GetPaginated(ctx context.Context, params muscleg
 	}
 
 	err := query.Scan(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
 
-	return models, err
-}
+	total, err := r.GetDB().NewSelect().Model(&musclegroup.Model{}).Count(ctx)
 
-func (r *MuscleGroupRepository) Count(ctx context.Context) (int, error) {
-	return r.GetDB().NewSelect().Model(&musclegroup.Model{}).Count(ctx)
+	return models, total, err
 }
 
 func (r *MuscleGroupRepository) Update(ctx context.Context, id uuid.UUID, model *musclegroup.Model) error {

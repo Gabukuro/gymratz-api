@@ -37,17 +37,7 @@ func (s *Service) CreateMuscleGroup(ctx context.Context, bodyRequest musclegroup
 }
 
 func (s *Service) ListMuscleGroups(ctx context.Context, params musclegroup.ListMuscleGroupsQueryParams) ([]*musclegroup.Model, int, error) {
-	muscleGroups, err := s.muscleGroupRepo.GetPaginated(ctx, params)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	total, err := s.muscleGroupRepo.Count(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return muscleGroups, total, nil
+	return s.muscleGroupRepo.GetPaginated(ctx, params)
 }
 
 func (s *Service) UpdateMuscleGroup(ctx context.Context, id uuid.UUID, bodyRequest musclegroup.UpdateMuscleGroupRequest) (*musclegroup.Model, error) {

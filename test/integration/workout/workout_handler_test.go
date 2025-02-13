@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/Gabukuro/gymratz-api/internal/infra/database"
-	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/user"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/workout"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/setup"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/testhelper"
 	"github.com/stretchr/testify/assert"
@@ -23,15 +23,10 @@ func TestWorkoutHandler(t *testing.T) {
 	t.Run("should create a new workout", func(t *testing.T) {
 		testhelper.CleanUpDatabase(ctx, database.DB())
 
-		user := testhelper.CreateUser(ctx, database.DB(), &user.Model{
-			Name:     "John Doe",
-			Email:    "john@doe.com",
-			Password: "password",
-		})
+		user := testhelper.CreateUser(ctx, database.DB(), nil)
 
 		exercise, _ := testhelper.CreateExerciseWithMuscleGroup(ctx, database.DB(), "Barbell Bench Press", "Barbell Bench Press Description", "Chest")
-
-		rep, err := testhelper.RunRequest(
+		resp, err := testhelper.RunRequest(
 			setup,
 			http.MethodPost,
 			"/workouts",
@@ -54,6 +49,64 @@ func TestWorkoutHandler(t *testing.T) {
 		)
 
 		assert.Nil(t, err)
-		assert.Equal(t, http.StatusCreated, rep.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		responseParsed := testhelper.ParseSuccessResponseBody[workout.Model](resp.Body)
+		assert.Equal(t, response.StatusSuccess, responseParsed.Status)
+
+		assert.Equal(t, "Chest Day", responseParsed.Data.Name)
+		assert.Equal(t, user.ID, responseParsed.Data.UserID)
+		assert.Equal(t, 1, len(responseParsed.Data.WorkoutExercises))
+		assert.Equal(t, exercise.ID, responseParsed.Data.WorkoutExercises[0].ExerciseID)
+		assert.Equal(t, 3, responseParsed.Data.WorkoutExercises[0].Sets)
+		assert.Equal(t, 10, *responseParsed.Data.WorkoutExercises[0].Repetitions)
+		assert.Equal(t, 20.0, *responseParsed.Data.WorkoutExercises[0].Weight)
+		assert.Equal(t, 0, *responseParsed.Data.WorkoutExercises[0].Duration)
+		assert.Equal(t, 60, responseParsed.Data.WorkoutExercises[0].RestTime)
+		assert.Equal(t, "This is a note", *responseParsed.Data.WorkoutExercises[0].Notes)
+	})
+
+	t.Run("should list all user workouts", func(t *testing.T) {
+		testhelper.CleanUpDatabase(ctx, database.DB())
+
+		user := testhelper.CreateUser(ctx, database.DB(), nil)
+		testWorkouts := testhelper.CreateUserManyWorkout(ctx, database.DB(), user.ID, 5)
+
+		resp, err := testhelper.RunRequest(
+			setup,
+			http.MethodGet,
+			"/workouts",
+			nil,
+			map[string]string{
+				"Authorization": testhelper.GenerateAuthToken(setup.EnvVariables.JWTSecret, &user.Email),
+			},
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		responseParsed := testhelper.ParsePaginationResponseBody[[]workout.Model](resp.Body)
+		assert.Equal(t, response.StatusSuccess, responseParsed.Status)
+
+		assert.Len(t, responseParsed.Data, len(testWorkouts))
+		for _, item := range responseParsed.Data {
+			testWorkout, ok := testWorkouts[item.ID.String()]
+			assert.True(t, ok)
+
+			assert.Equal(t, testWorkout.ID, item.ID)
+			assert.Equal(t, testWorkout.Name, item.Name)
+			assert.Equal(t, testWorkout.UserID, item.UserID)
+
+			assert.Len(t, item.WorkoutExercises, len(testWorkout.WorkoutExercises))
+			for i, exercise := range item.WorkoutExercises {
+				assert.Equal(t, testWorkout.WorkoutExercises[i].ExerciseID, exercise.ExerciseID)
+				assert.Equal(t, testWorkout.WorkoutExercises[i].Sets, exercise.Sets)
+				assert.Equal(t, testWorkout.WorkoutExercises[i].Repetitions, exercise.Repetitions)
+				assert.Equal(t, testWorkout.WorkoutExercises[i].Weight, exercise.Weight)
+				assert.Equal(t, testWorkout.WorkoutExercises[i].Duration, exercise.Duration)
+				assert.Equal(t, testWorkout.WorkoutExercises[i].RestTime, exercise.RestTime)
+				assert.Equal(t, testWorkout.WorkoutExercises[i].Notes, exercise.Notes)
+			}
+		}
 	})
 }
