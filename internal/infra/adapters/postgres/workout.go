@@ -35,7 +35,19 @@ func (r *WorkoutRepository) CreateWorkoutExercises(ctx context.Context, exercise
 
 func (r *WorkoutRepository) GetByID(ctx context.Context, id uuid.UUID) (*workout.Model, error) {
 	model := &workout.Model{}
+	err := r.GetDB().NewSelect().Model(model).Where("id = ?", id).Scan(ctx)
+	return model, err
+}
+
+func (r *WorkoutRepository) GetByIDWithRelations(ctx context.Context, id uuid.UUID) (*workout.Model, error) {
+	model := &workout.Model{}
 	err := r.GetDB().NewSelect().Model(model).Relation("WorkoutExercises.Exercise").Where("id = ?", id).Scan(ctx)
+	return model, err
+}
+
+func (r *WorkoutRepository) GetWorkoutExercise(ctx context.Context, workoutID uuid.UUID, workoutExerciseID uuid.UUID) (*workoutexercise.Model, error) {
+	model := &workoutexercise.Model{}
+	err := r.GetDB().NewSelect().Model(model).Where("workout_id = ? AND id = ?", workoutID, workoutExerciseID).Scan(ctx)
 	return model, err
 }
 
@@ -59,4 +71,14 @@ func (r *WorkoutRepository) GetPaginated(ctx context.Context, userID uuid.UUID, 
 	total, err := query.Count(ctx)
 
 	return models, total, err
+}
+
+func (r *WorkoutRepository) UpdateWorkout(ctx context.Context, id uuid.UUID, model *workout.Model) error {
+	_, err := r.GetDB().NewUpdate().Model(model).Where("id = ?", id).Exec(ctx)
+	return err
+}
+
+func (r *WorkoutRepository) UpdateWorkoutExercise(ctx context.Context, workoutID uuid.UUID, workoutExerciseID uuid.UUID, model *workoutexercise.Model) error {
+	_, err := r.GetDB().NewUpdate().Model(model).Where("workout_id = ? AND id = ?", workoutID, workoutExerciseID).Exec(ctx)
+	return err
 }

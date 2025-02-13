@@ -7,6 +7,7 @@ import (
 
 	"github.com/Gabukuro/gymratz-api/internal/infra/database"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/workout"
+	"github.com/Gabukuro/gymratz-api/internal/pkg/entity/workoutexercise"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/setup"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/testhelper"
@@ -108,5 +109,73 @@ func TestWorkoutHandler(t *testing.T) {
 				assert.Equal(t, testWorkout.WorkoutExercises[i].Notes, exercise.Notes)
 			}
 		}
+	})
+
+	t.Run("should update a workout", func(t *testing.T) {
+		testhelper.CleanUpDatabase(ctx, database.DB())
+
+		user := testhelper.CreateUser(ctx, database.DB(), nil)
+		testWorkout := testhelper.CreateSingleWorkout(ctx, database.DB(), user.ID, 1)
+
+		resp, err := testhelper.RunRequest(
+			setup,
+			http.MethodPut,
+			"/workouts/"+testWorkout.ID.String(),
+			&workout.UpdateWorkoutRequest{
+				Name: "Updated workout name",
+			},
+			nil,
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		responseParsed := testhelper.ParseSuccessResponseBody[workout.Model](resp.Body)
+		assert.Equal(t, response.StatusSuccess, responseParsed.Status)
+
+		assert.Equal(t, "Updated workout name", responseParsed.Data.Name)
+		assert.Equal(t, user.ID, responseParsed.Data.UserID)
+		assert.Equal(t, testWorkout.ID, responseParsed.Data.ID)
+	})
+
+	t.Run("should update a workout exercise", func(t *testing.T) {
+		testhelper.CleanUpDatabase(ctx, database.DB())
+
+		user := testhelper.CreateUser(ctx, database.DB(), nil)
+		testWorkout := testhelper.CreateSingleWorkout(ctx, database.DB(), user.ID, 1)
+		workoutExercise := testWorkout.WorkoutExercises[0]
+
+		updateWorkoutExerciseRequest := workout.UpdateWorkoutExerciseRequest{
+			Sets:        5,
+			Repetitions: testhelper.GetPointer(15),
+			Weight:      testhelper.GetPointer(float64(30)),
+			Duration:    testhelper.GetPointer(0),
+			RestTime:    90,
+			Notes:       testhelper.GetPointer("This is an updated note"),
+		}
+
+		resp, err := testhelper.RunRequest(
+			setup,
+			http.MethodPut,
+			"/workouts/"+testWorkout.ID.String()+"/exercises/"+workoutExercise.ID.String(),
+			&updateWorkoutExerciseRequest,
+			nil,
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		responseParsed := testhelper.ParseSuccessResponseBody[workoutexercise.Model](resp.Body)
+		assert.Equal(t, response.StatusSuccess, responseParsed.Status)
+
+		assert.Equal(t, workoutExercise.ID, responseParsed.Data.ID)
+		assert.Equal(t, testWorkout.ID, responseParsed.Data.WorkoutID)
+		assert.Equal(t, workoutExercise.ExerciseID, responseParsed.Data.ExerciseID)
+		assert.Equal(t, updateWorkoutExerciseRequest.Sets, responseParsed.Data.Sets)
+		assert.Equal(t, *updateWorkoutExerciseRequest.Repetitions, *responseParsed.Data.Repetitions)
+		assert.Equal(t, *updateWorkoutExerciseRequest.Weight, *responseParsed.Data.Weight)
+		assert.Equal(t, *updateWorkoutExerciseRequest.Duration, *responseParsed.Data.Duration)
+		assert.Equal(t, updateWorkoutExerciseRequest.RestTime, responseParsed.Data.RestTime)
+		assert.Equal(t, *updateWorkoutExerciseRequest.Notes, *responseParsed.Data.Notes)
 	})
 }

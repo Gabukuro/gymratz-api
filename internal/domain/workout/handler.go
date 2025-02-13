@@ -6,6 +6,7 @@ import (
 	"github.com/Gabukuro/gymratz-api/internal/pkg/middleware"
 	"github.com/Gabukuro/gymratz-api/internal/pkg/response"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type (
@@ -28,6 +29,8 @@ func NewHTTPHandler(params HTTPHandlerParams) {
 	workoutGroup := params.App.Group("/workouts", middleware.AuthMiddleware(params.JWTSecret))
 	workoutGroup.Post("/", httpHandler.CreateWorkout)
 	workoutGroup.Get("/", httpHandler.GetUserWorkoutPaginated)
+	workoutGroup.Put("/:id", httpHandler.UpdateWorkout)
+	workoutGroup.Put("/:workoutID/exercises/:workoutExerciseID", httpHandler.UpdateWorkoutExercise)
 }
 
 func (h *httpHandler) CreateWorkout(c *fiber.Ctx) error {
@@ -66,4 +69,60 @@ func (h *httpHandler) GetUserWorkoutPaginated(c *fiber.Ctx) error {
 		PerPage:    reqQuery.PerPage,
 		TotalItems: total,
 	}))
+}
+
+func (h *httpHandler) UpdateWorkout(c *fiber.Ctx) error {
+	workoutID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
+			response.NewErrorInvalidURLParam(&response.ErrorDetails{
+				response.NewErrorDetail("id", "Invalid UUID format"),
+			}))
+	}
+
+	var reqParams workout.UpdateWorkoutRequest
+	if err := c.BodyParser(&reqParams); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
+			response.NewErrorInvalidRequestBody(nil))
+	}
+
+	workoutModel, err := h.service.UpdateWorkout(c.Context(), workoutID, reqParams)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(workoutModel))
+}
+
+func (h *httpHandler) UpdateWorkoutExercise(c *fiber.Ctx) error {
+	workoutID, err := uuid.Parse(c.Params("workoutID"))
+	if err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
+			response.NewErrorInvalidURLParam(&response.ErrorDetails{
+				response.NewErrorDetail("workoutID", "Invalid UUID format"),
+			}))
+	}
+
+	workoutExerciseID, err := uuid.Parse(c.Params("workoutExerciseID"))
+	if err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
+			response.NewErrorInvalidURLParam(&response.ErrorDetails{
+				response.NewErrorDetail("workoutExerciseID", "Invalid UUID format"),
+			}))
+	}
+
+	var reqParams workout.UpdateWorkoutExerciseRequest
+	if err := c.BodyParser(&reqParams); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(
+			response.NewErrorInvalidRequestBody(nil))
+	}
+
+	workoutExercise, err := h.service.UpdateWorkoutExercise(c.Context(), workoutID, workoutExerciseID, reqParams)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			response.NewErrorResponse(err.Error(), fiber.StatusInternalServerError, nil))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.NewSuccessResponse(workoutExercise))
 }

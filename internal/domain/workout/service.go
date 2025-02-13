@@ -47,7 +47,7 @@ func (s *Service) CreateWorkout(ctx context.Context, params workout.CreateWorkou
 		return nil, err
 	}
 
-	return s.workoutRepo.GetByID(ctx, workoutModel.ID)
+	return s.workoutRepo.GetByIDWithRelations(ctx, workoutModel.ID)
 
 }
 
@@ -77,4 +77,41 @@ func (s *Service) ListUserWorkouts(ctx context.Context, userEmail string, params
 	}
 
 	return s.workoutRepo.GetPaginated(ctx, userModel.ID, params)
+}
+
+func (s *Service) UpdateWorkout(ctx context.Context, workoutID uuid.UUID, params workout.UpdateWorkoutRequest) (*workout.Model, error) {
+	workoutModel, err := s.workoutRepo.GetByID(ctx, workoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	workoutModel.Name = params.Name
+
+	err = s.workoutRepo.UpdateWorkout(ctx, workoutID, workoutModel)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.workoutRepo.GetByIDWithRelations(ctx, workoutID)
+}
+
+func (s *Service) UpdateWorkoutExercise(ctx context.Context, workoutID uuid.UUID, workoutExerciseID uuid.UUID, params workout.UpdateWorkoutExerciseRequest) (*workoutexercise.Model, error) {
+	workoutExercise, err := s.workoutRepo.GetWorkoutExercise(ctx, workoutID, workoutExerciseID)
+	if err != nil {
+		return nil, err
+	}
+
+	workoutExercise.Sets = params.Sets
+	workoutExercise.Repetitions = params.Repetitions
+	workoutExercise.Weight = params.Weight
+	workoutExercise.Duration = params.Duration
+	workoutExercise.RestTime = params.RestTime
+	workoutExercise.Notes = params.Notes
+
+	err = s.workoutRepo.UpdateWorkoutExercise(ctx, workoutID, workoutExerciseID, workoutExercise)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.workoutRepo.GetWorkoutExercise(ctx, workoutID, workoutExerciseID)
 }

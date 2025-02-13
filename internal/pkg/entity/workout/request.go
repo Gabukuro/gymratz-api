@@ -12,6 +12,20 @@ type (
 		Exercises []WorkoutExercise `json:"exercises"`
 	}
 
+	UpdateWorkoutRequest struct {
+		Name   string    `json:"name"`
+		UserID uuid.UUID `json:"user_id"`
+	}
+
+	UpdateWorkoutExerciseRequest struct {
+		Sets        int      `json:"sets"`
+		Repetitions *int     `json:"repetitions"`
+		Weight      *float64 `json:"weight"`
+		Duration    *int     `json:"duration"`
+		RestTime    int      `json:"rest_time"`
+		Notes       *string  `json:"notes"`
+	}
+
 	WorkoutExercise struct {
 		ExerciseID  uuid.UUID `json:"exercise_id"`
 		Sets        int       `json:"sets"`

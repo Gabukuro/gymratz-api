@@ -172,43 +172,54 @@ func CreateUserManyWorkout(
 	workoutModels := make(map[string]workout.Model, n)
 
 	for i := 0; i < n; i++ {
-		workoutModel := workout.Model{
-			UserID: userID,
-			Name:   fmt.Sprintf("Test workout #%d", i),
-		}
-
-		_, err := database.NewInsert().Model(&workoutModel).Exec(ctx)
-		if err != nil {
-			panic(err)
-		}
-
-		exercise, _ := CreateExerciseWithMuscleGroup(ctx, database,
-			fmt.Sprintf("Test exercise #%d", i),
-			fmt.Sprintf("Test exercise description #%d", i),
-			fmt.Sprintf("Test muscle group #%d", i),
-		)
-
-		_, err = database.NewInsert().Model(&workoutexercise.Model{
-			WorkoutID:   workoutModel.ID,
-			ExerciseID:  exercise.ID,
-			Sets:        3,
-			Repetitions: GetPointer(10),
-			Weight:      GetPointer(20.0),
-			Duration:    GetPointer(0),
-			RestTime:    60,
-			Notes:       GetPointer("This is a note"),
-		}).Exec(ctx)
-
-		if err != nil {
-			panic(err)
-		}
-
-		_ = database.NewSelect().Model(&workoutModel).Relation("WorkoutExercises.Exercise").Where("id = ?", workoutModel.ID).Scan(ctx)
+		workoutModel := CreateSingleWorkout(ctx, database, userID, i)
 
 		workoutModels[workoutModel.ID.String()] = workoutModel
 	}
 
 	return workoutModels
+}
+
+func CreateSingleWorkout(
+	ctx context.Context,
+	database *bun.DB,
+	userID uuid.UUID,
+	index int,
+) workout.Model {
+	workoutModel := workout.Model{
+		UserID: userID,
+		Name:   fmt.Sprintf("Test workout #%d", index),
+	}
+
+	_, err := database.NewInsert().Model(&workoutModel).Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	exercise, _ := CreateExerciseWithMuscleGroup(ctx, database,
+		fmt.Sprintf("Test exercise #%d", index),
+		fmt.Sprintf("Test exercise description #%d", index),
+		fmt.Sprintf("Test muscle group #%d", index),
+	)
+
+	_, err = database.NewInsert().Model(&workoutexercise.Model{
+		WorkoutID:   workoutModel.ID,
+		ExerciseID:  exercise.ID,
+		Sets:        3,
+		Repetitions: GetPointer(10),
+		Weight:      GetPointer(20.0),
+		Duration:    GetPointer(0),
+		RestTime:    60,
+		Notes:       GetPointer("This is a note"),
+	}).Exec(ctx)
+
+	if err != nil {
+		panic(err)
+	}
+
+	_ = database.NewSelect().Model(&workoutModel).Relation("WorkoutExercises.Exercise").Where("id = ?", workoutModel.ID).Scan(ctx)
+
+	return workoutModel
 }
 
 func CreateExerciseWithMuscleGroup(
